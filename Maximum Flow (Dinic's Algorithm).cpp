@@ -7,10 +7,9 @@ using namespace std;
 vector<int>adj[MAX];
 int cap[MAX][MAX], flow[MAX][MAX];
 int level[MAX];
-int start[MAX];
 
-bool hasPath(int source, int sink){
-    memset(level, 0, sizeof level);
+bool bfs(int source, int sink){
+    memset(level, -1, sizeof level);
     queue<int>q;
     q.push(source);
     level[source] = 1;
@@ -21,22 +20,22 @@ bool hasPath(int source, int sink){
 
         for(int i=0; i<adj[u].size(); i++){
             int v = adj[u][i];
-            if(cap[u][v] > flow[u][v] || flow[u][v] > 0 && !level[v]){
+            if(cap[u][v] > flow[u][v] && level[v]==-1){
                 level[v] = level[u] + 1;
                 q.push(v);
             }
         }
     }
 
-    return level[sink];
+    return level[sink] != -1;
 }
 
 int dfs(int u, int sink, int bottleneck){
     if(u==sink)
         return bottleneck;
 
-    for(; start[u]<adj[u].size(); start[u]++){
-        int v = adj[u][start[u]];
+    for(int i=0; i<adj[u].size(); i++){
+        int v = adj[u][i];
         if(cap[u][v] > flow[u][v] && level[v]==level[u]+1){
             int value = dfs(v, sink, min(cap[u][v], bottleneck));
             flow[u][v]+=value;
@@ -52,9 +51,9 @@ int dfs(int u, int sink, int bottleneck){
 int maxFlow(int source, int sink){
     int max_flow = 0;
 
-    while(hasPath(source, sink)){
-        memset(start, 0, sizeof start);
-        max_flow+=dfs(source, sink, INF);
+    while(bfs(source, sink)){
+        while(int f = dfs(source,sink,INF))
+            max_flow+=f;
     }
 
     return max_flow;
