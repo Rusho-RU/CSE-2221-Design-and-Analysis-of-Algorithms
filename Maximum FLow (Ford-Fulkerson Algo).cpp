@@ -9,47 +9,47 @@ vector<int>adj[MAX];
 int rGraph[MAX][MAX];
 int parent[MAX];
 
-bool hasPath(int s, int to){
-    bool visited[MAX];
+bool bfs(int source, int sink, int n){
+    bool visited[n];
     memset(visited, false, sizeof visited);
 
     queue<int>q;
-    q.push(s);
-    visited[s] = true;
+    q.push(source);
+    visited[source] = true;
 
     while(!q.empty()){
-        s = q.front();
+        int from = q.front();
         q.pop();
 
-        for(int i=0; i<adj[s].size(); i++){
-            int d = adj[s][i];
+        for(int i=0; i<adj[from].size(); i++){
+            int to = adj[from][i];
 
-            if(!visited[d] && rGraph[s][d]>0){
-                visited[d] = true;
-                parent[d] = s;
-                q.push(d);
+            if(!visited[to] && rGraph[from][to]>0){
+                visited[to] = true;
+                parent[to] = from;
+                q.push(to);
             }
         }
     }
 
-    return visited[to];
+    return visited[sink];
 }
 
-int maxFlow(int source, int sink){
+int FordFulkerson(int source, int sink, int n){
     int max_flow = 0;
 
-    while(hasPath(source, sink)){
+    while(bfs(source, sink, n)){
         int flow = INT_MAX;
 
-        for(int v=sink; v!=source; v=parent[v]){
-            int u = parent[v];
-            flow = min(flow, rGraph[u][v]);
+        for(int to = sink; to!=source; to = parent[to]){
+            int from = parent[to];
+            flow = min(flow, rGraph[from][to]);
         }
 
-        for(int v=sink; v!=source; v=parent[v]){
-            int u = parent[v];
-            rGraph[u][v] -= flow;
-            rGraph[v][u] += flow;
+        for(int to = sink; to!=source; to = parent[to]){
+            int from = parent[to];
+            rGraph[from][to]-=flow;
+            rGraph[to][from]+=flow;
         }
 
         max_flow += flow;
@@ -88,11 +88,10 @@ int main(){
 
         source--, sink--;
 
-        int flow = maxFlow(source, sink);
+        int flow = FordFulkerson(source, sink, n);
         printf("Case %d: %d\n",++Case,flow);
         reset(n);
     }
 
     return 0;
 }
-

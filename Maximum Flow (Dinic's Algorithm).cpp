@@ -6,53 +6,62 @@ using namespace std;
 
 vector<int>adj[MAX];
 int cap[MAX][MAX], flow[MAX][MAX];
-int level[MAX];
+int level[MAX], startFrom[MAX];
 
-bool bfs(int source, int sink){
-    memset(level, -1, sizeof level);
+bool bfs(int source, int sink, int n){
+    for(int i=0; i<n; i++)
+        level[i] = -1;
+
     queue<int>q;
     q.push(source);
     level[source] = 1;
 
     while(!q.empty()){
-        int u = q.front();
+        int from = q.front();
         q.pop();
 
-        for(int i=0; i<adj[u].size(); i++){
-            int v = adj[u][i];
-            if(cap[u][v] > flow[u][v] && level[v]==-1){
-                level[v] = level[u] + 1;
-                q.push(v);
+        for(int i=0; i<adj[from].size(); i++){
+            int to = adj[from][i];
+
+            if(level[to]==-1 && cap[from][to] > flow[from][to]){
+                level[to] = level[from] + 1;
+                if(to==sink)
+                    return true;
+                q.push(to);
             }
         }
     }
 
-    return level[sink] != -1;
+    return false;
 }
 
-int dfs(int u, int sink, int bottleneck){
-    if(u==sink)
+int dfs(int from, int sink, int bottleneck){
+    if(from==sink)
         return bottleneck;
 
-    for(int i=0; i<adj[u].size(); i++){
-        int v = adj[u][i];
-        if(cap[u][v] > flow[u][v] && level[v]==level[u]+1){
-            int value = dfs(v, sink, min(cap[u][v], bottleneck));
-            flow[u][v]+=value;
-            flow[v][u]-=value;
-            if(value)
+    for(; startFrom[from]<adj[from].size(); startFrom[from]++){
+        int to = adj[from][startFrom[from]];
+
+        if(cap[from][to] > flow[from][to] && level[to] == level[from] + 1){
+            int value = dfs(to, sink, min(bottleneck, cap[from][to]-flow[from][to]));
+            if(value){
+                flow[from][to]+=value;
+                flow[to][from]-=value;
                 return value;
+            }
         }
     }
 
     return 0;
 }
 
-int maxFlow(int source, int sink){
+int Dinics(int source, int sink, int n){
     int max_flow = 0;
 
-    while(bfs(source, sink)){
-        while(int f = dfs(source,sink,INF))
+    while(bfs(source, sink, n)){
+        for(int i=0; i<n; i++)
+            startFrom[i] = 0;
+        while(int f = dfs(source,sink,INT_MAX))
             max_flow+=f;
     }
 
@@ -91,7 +100,7 @@ int main(){
 
         source--, sink--;
 
-        int max_flow = maxFlow(source, sink);
+        int max_flow = Dinics(source, sink, n);
         printf("Case %d: %d\n",++Case,max_flow);
         reset(n);
     }
