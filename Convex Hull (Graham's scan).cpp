@@ -1,78 +1,79 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-struct point{
-    int x, y;
-    point(int x, int y){
-        this->x = x;
-        this->y = y;
+#define eps 0.000001
+
+struct Point{
+    double x, y;
+    Point(double _x, double _y){
+        this->x = _x;
+        this->y = _y;
     }
+
+    Point(){}
 };
 
-vector<point>p;
-stack<point>hullPoint;
+Point bottomLeft;
 
-int findGrahamPoint(){
+bool isSame(double a, double b){
+    return abs(a-b) < eps;
+}
+
+int findGrahamPoint(vector<Point>& polygon){
     int gp = 0;
-
-    for(int i=1; i<p.size(); i++)
-        if(p[i].y < p[gp].y || (p[i].y == p[gp].y && p[i].x < p[gp].x))
+    for(int i=1; i<polygon.size(); i++)
+        if(polygon[i].y < polygon[gp].y || (isSame(polygon[i].y, polygon[gp].y) && polygon[i].x < polygon[gp].x))
             gp = i;
-
     return gp;
 }
 
-int ccw(const point& a, const point& b, const point& c){
-    int val = a.x*(b.y-c.y) + b.x*(c.y-a.y) + c.x*(a.y-b.y);
-
-    if(val<0)
-        return -1;
-    if(val>0)
-        return 1;
-    return 0;
+double cross(const Point& a, const Point& b, const Point& c){
+    return (a.x*(b.y-c.y) + b.x*(c.y-a.y) + c.x*(a.y-b.y));
 }
 
-int dist(const point& a, const point& b){
-    int x = a.x-b.x, y = a.y-b.y;
-
+double dist(const Point& a, const Point& b){
+    double x = a.x-b.x, y = a.y-b.y;
     return x*x + y*y;
 }
 
-bool cmp(const point& a, const point& b){
-    int val = ccw(p[0],a,b);
+bool cmp(const Point& a, const Point& b){
+    double val = cross(bottomLeft,a,b);
 
-    if(val==0)
-        return dist(p[0], a) < dist(p[0], b);
+    if(isSame(val, 0))
+        return dist(bottomLeft, a) < dist(bottomLeft, b);
 
-    return val==1;
+    return val>1;
 }
 
-void reorder(){
-    vector<point>::iterator it = p.begin();
-    sort(++it, p.end(), cmp);
+void reorder(vector<Point>& polygon){
+    vector<Point>::iterator it = polygon.begin();
+    sort(++it, polygon.end(), cmp);
     return;
 }
 
-point nextToTop(){
-    point hold = hullPoint.top();
+Point nextToTop(stack<Point>& hullPoint){
+    Point hold = hullPoint.top();
     hullPoint.pop();
-    point ret = hullPoint.top();
+    Point ret = hullPoint.top();
     hullPoint.push(hold);
     return ret;
 }
 
-void convexHull(){
-    reorder();
+void convexHull(vector<Point>& polygon, stack<Point>& hullPoint){
+    int gp = findGrahamPoint(polygon);
+    swap(polygon[0], polygon[gp]);
+    bottomLeft = polygon[0];
+    reorder(polygon);
 
-    hullPoint.push(p[0]);
-    hullPoint.push(p[1]);
-    hullPoint.push(p[2]);
+    hullPoint.push(polygon[0]);
+    hullPoint.push(polygon[1]);
+    hullPoint.push(polygon[2]);
 
-    for(int i=3; i<p.size(); i++){
-        while(ccw(nextToTop(), hullPoint.top(), p[i])==-1)
+    for(int i=3; i<polygon.size(); i++){
+        while(cross(nextToTop(hullPoint), hullPoint.top(), polygon[i]) < 0)
             hullPoint.pop();
 
-        hullPoint.push(p[i]);
+        hullPoint.push(polygon[i]);
     }
 
     return;
@@ -82,19 +83,19 @@ int main(){
     int numOfPoints;
     scanf("%d",&numOfPoints);
 
+    vector<Point>polygon;
+    stack<Point>hullPoint;
+
     for(int i=0; i<numOfPoints; i++){
-        int x,y;
-        scanf("%d%d",&x,&y);
-        p.push_back(point(x,y));
+        double x,y;
+        scanf("%lf %lf",&x,&y);
+        polygon.push_back(Point(x,y));
     }
 
-    int grahamPoint = findGrahamPoint();
-    swap(p[0], p[grahamPoint]);
-
-    convexHull();
+    convexHull(polygon, hullPoint);
 
     while(!hullPoint.empty()){
-        printf("%d %d\n",hullPoint.top().x, hullPoint.top().y);
+        printf("%lf %lf\n",hullPoint.top().x, hullPoint.top().y);
         hullPoint.pop();
     }
 
